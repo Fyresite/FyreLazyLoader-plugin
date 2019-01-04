@@ -4,7 +4,7 @@ Plugin Name:  Fyre Lazy Load
 Plugin URI:   
 Description:  Lazy load images by leaving out src="URL" and instead using data-src="URL"
 Version:      0
-Author:       WordPress.org
+Author:       Fyresite.com
 Author URI:   https://fyresite.com/
 License:      GPL2
 License URI:  https://www.gnu.org/licenses/gpl-2.0.html
@@ -13,16 +13,20 @@ Domain Path:  /languages
 */
 
 // LOAD SCRIPT
+	function fyre_lazy_scripts(){
 
-	$dir = plugin_dir_url(__FILE__); 
-	wp_register_script('fyrelazyload', $dir .'assets/js/fyrelazyload.js', array('jquery'), false, true);
-	wp_enqueue_script('fyrelazyload');
+		$dir = plugin_dir_url(__FILE__); 
+		wp_register_script('intersectionobserver', $dir .'assets/js/intersection-observer.js', array('jquery'), false, true);    
+		wp_enqueue_script('intersectionobserver');
+		wp_register_script('fyrelazyload', $dir .'assets/js/fyrelazyload.js', array('jquery','intersectionobserver'), false, true);
+		wp_enqueue_script('fyrelazyload');
 
-	//get plugin directory
-	wp_localize_script('fyrelazyload', 'lazyLocation', array(
-	    'pluginsUrl' => plugins_url(),
-	));
-
+		//get plugin directory
+		wp_localize_script('fyrelazyload', 'lazyLocation', array(
+			'pluginsUrl' => plugins_url(),
+		));
+	}
+	add_action( 'wp_enqueue_scripts', 'fyre_lazy_scripts'); 
 
 //ADD LAZY TO WOOCOMMERCE AUTOMATICALLY
 

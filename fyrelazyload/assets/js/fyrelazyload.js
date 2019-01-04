@@ -2,15 +2,17 @@
 
     var pluginUrl = lazyLocation.pluginsUrl + '/fyrelazyload';
     
+    // lazy load loader img
     $('[data-src]').each(function (index, el) {
         if (isScrolledIntoView(el)) { 
             el.src = $(el).data('src'); 
         } else {
-            el.src = pluginUrl + '/assets/img/loader.gif'; 
+            el.src = pluginUrl + '/assets/img/loader.gif';     
         }  
     }); 
 
-    $(window).on('scroll', function(e) {
+    // lazy load events
+    $(window).on('DOMContentLoaded load resize scroll', function(e) {
       $('[data-src]').each(function (index, el) {
         if (isScrolledIntoView(el)) {
           el.src = $(el).data('src');
@@ -18,6 +20,7 @@
       });
     });
 
+    // lazy load viewport function
     function isScrolledIntoView(elem) {
         var docViewTop = $(window).scrollTop();
         var docViewBottom = docViewTop + $(window).height();
@@ -27,5 +30,67 @@
 
         return ((elemBottom <= docViewBottom) && (elemTop >= docViewTop));
     }
+
+    // switch the
+    function BackgroundNode({node, loadedClassName}) {
+        let src = node.getAttribute('data-background');
+        let show = (onComplete) => {
+            requestAnimationFrame(() => {
+                node.style.backgroundImage = `url(${src})`
+                node.classList.add(loadedClassName);
+                onComplete();
+            })
+        }
+
+        return {
+            node,
+
+            // onComplete is called after the image is done loading. 
+            load: (onComplete) => {
+                let img = new Image();
+                img.onload = show(onComplete);
+                img.src = src;
+            }
+        }
+    }
+    let defaultOptions = {
+        selector: '[data-background]',
+        loadedClassName: 'loaded'
+    }
+
+    function BackgroundLazyLoader({selector, loadedClassName} = defaultOptions) {
+        let nodes = [].slice.apply(document.querySelectorAll(selector))
+            .map(node => new BackgroundNode({node, loadedClassName}));
+
+        let callback = (entries, observer) => {
+            entries.forEach(({target, isIntersecting}) => {   
+                if (!isIntersecting) {
+                    return;
+                }
+
+                let obj = nodes.find(it => it.node.isSameNode(target));
+                
+                if (obj) {
+                    obj.load(() => {
+                        // Unobserve the node:
+                        observer.unobserve(target);
+                        // Remove this node from our list:
+                        nodes = nodes.filter(n => !n.node.isSameNode(target));
+                        
+                        // If there are no remaining unloaded nodes,
+                        // disconnect the observer since we don't need it anymore.
+                        if (!nodes.length) {
+                            observer.disconnect();
+                        }
+                    });
+                }
+            })
+        };
+        
+        let observer = new IntersectionObserver(callback);
+        nodes.forEach(node => observer.observe(node.node));
+    };   
+
+    BackgroundLazyLoader();
 
 })(jQuery);
